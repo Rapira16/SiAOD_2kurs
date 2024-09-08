@@ -32,8 +32,7 @@ int main() {
     }
     int stop = clock();
     int res = stop - start;
-    bitArray.shrink_to_fit();
-    std::cout << bitArray.capacity()/(1024*1024*8) << "Mb\n";
+    std::cout << bitArray.size()/(1024*1024*8) << "Mb\n";
     std::cout << res << "ms";
     outputFile.close();
 
