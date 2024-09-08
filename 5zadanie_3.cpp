@@ -4,9 +4,11 @@
 #include <fstream>
 #include <bitset>
 #include <vector>
+#include <ctime>
 
 
 int main() {
+    int start = clock();
     const int MAX_NUM = 10000000; // Максимальное число в наборе данных
     const int BIT_ARRAY_SIZE = MAX_NUM / 8 + 1; // Размер битового массива для охвата всех чисел
 
@@ -28,6 +30,11 @@ int main() {
             outputFile << i << std::endl;
         }
     }
+    int stop = clock();
+    int res = stop - start;
+    bitArray.shrink_to_fit();
+    std::cout << bitArray.capacity()/(1024*1024*8) << "Mb\n";
+    std::cout << res << "ms";
     outputFile.close();
 
     return 0;
