@@ -24,8 +24,8 @@ void fillArrayRandomlyUnique(int arr[], int size) {
 }
 // Функция для сортировки массива с использованием битовой маски
 void bitSort(int *data, int size, int *result, int &resultSize) {
-    unsigned long long bitmask = 0;       // Начальное значение битовой маски (long long для 2б)
-    int bitCount = sizeof(long long) * 8; // Вычисление размера битовой маски в битах (sizeof (long long))
+    unsigned int bitmask = 0;       // Начальное значение битовой маски (long long для 2б)
+    int bitCount = sizeof(int) * 8; // Вычисление размера битовой маски в битах (sizeof (long long))
     unsigned mask = 1 << bitCount - 1; // Инициализация маски с единственной единицей в старшем бите
 
     // Заполнение битовой маски на основе элементов массива
