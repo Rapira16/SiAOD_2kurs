@@ -4,7 +4,7 @@
 void first_a_b() {
     unsigned char x = 255;
     unsigned char mask = 1;
-    x = x & (~(mask << 6));
+    x = x & (~(mask << 4)); // для пункта б заменить на 6
     std::cout << "x = " << (int)x << std::endl;
 }
 
