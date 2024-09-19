@@ -2,6 +2,7 @@
 #include <vector>
 #include <algorithm>
 #include <cctype>
+#include <sstream>
 #include <iostream>
 
 // Функция для поиска слов, содержащих подстроку
@@ -9,27 +10,14 @@
 std::vector<std::string> find_words(const std::string& input_text, const std::string& substring) {
     // Вектор для хранения слов, найденных в входном тексте
     std::vector<std::string> words;
+    // Поток для разбиения входного текста на слова
+    std::istringstream iss(input_text);
     // Переменная для хранения текущего слова
     std::string word;
 
-    // Разбиваем входной текст на слова, проходя по каждому символу
-    for (char c : input_text) {
-        // Если встретили пробел, это означает конец слова
-        if (std::isspace(c)) {
-            // Если слово не пустое, добавляем его в вектор слов
-            if (!word.empty()) {
-                words.push_back(word);
-                // Очищаем переменную word для хранения следующего слова
-                word.clear();
-            }
-        } else {
-            // Если не пробел, добавляем символ к текущему слову
-            word += c;
-        }
-    }
-
-    // Добавляем последнее слово в вектор, если оно не пустое
-    if (!word.empty()) {
+    // Разбиваем входной текст на слова, используя поток iss
+    while (iss >> word) {
+        // Добавляем слово в вектор слов
         words.push_back(word);
     }
 
@@ -37,20 +25,12 @@ std::vector<std::string> find_words(const std::string& input_text, const std::st
     std::vector<std::string> result;
     // Проходим по каждому слову в векторе слов
     for (const auto& word : words) {
-        // Очищаем слово от неалфавитных символов, таких как знаки препинания
-        std::string clean_word;
-        for (char c : word) {
-            // Проверяем, является ли символ алфавитным
-            if (std::isalnum(c)) {
-                // Если да, добавляем его к очищенному слову
-                clean_word += c;
-            }
-        }
-
-        // Проверяем, содержит ли очищенное слово подстроку
-        if (clean_word.find(substring) != std::string::npos) {
+        // Проверяем, содержит ли слово подстроку
+        // Мы используем сравнение строк, начиная с конца слова, чтобы найти подстроку
+        if (word.size() >= substring.size() &&
+            word.compare(word.size() - substring.size(), substring.size(), substring) == 0) {
             // Если да, добавляем его в вектор результатов
-            result.push_back(clean_word);
+            result.push_back(word);
         }
     }
 
@@ -61,8 +41,9 @@ std::vector<std::string> find_words(const std::string& input_text, const std::st
 int main() {
     // Входной текст для поиска
     std::string input_text = "Hello, world! This is a sample text.";
+    std::cout << input_text;
     // Подстрока для поиска
-    std::string substring = "l";
+    std::string substring = "is";
     // Результат поиска
     std::vector<std::string> result = find_words(input_text, substring);
 
