@@ -1,36 +1,33 @@
-// C++ program for BFS of an undirected graph
+// Программа на C++ для обхода графа в ширину (BFS)
 #include <iostream>
 #include <queue>
 #include <vector>
 using namespace std;
 
-// BFS from given source s
+// Функция для обхода графа в ширину, начиная с вершины s
 void bfs(vector<vector<int>>& adj, int s)
 {
-    // Create a queue for BFS
+    // Создаем очередь для обхода графа в ширину
     queue<int> q;
 
-    // Initially mark all the vertices as not visited
-    // When we push a vertex into the q, we mark it as
-    // visited
+    // Изначально помечаем все вершины как не посещенные
+    // Когда мы добавляем вершину в очередь, мы помечаем ее как посещенную
     vector<bool> visited(adj.size(), false);
 
-    // Mark the source node as visited and
-    // enqueue it
+    // Помечаем стартовую вершину как посещенную и добавляем ее в очередь
     visited[s] = true;
     q.push(s);
 
-    // Iterate over the queue
+    // Итерируемся по очереди
     while (!q.empty()) {
 
-        // Dequeue a vertex from queue and print it
+        // Извлекаем вершину из очереди и печатаем ее
         int curr = q.front();
         q.pop();
         cout << curr << " ";
 
-        // Get all adjacent vertices of the dequeued
-        // vertex curr If an adjacent has not been
-        // visited, mark it visited and enqueue it
+        // Получаем все смежные вершины извлеченной вершины curr
+        // Если смежная вершина еще не посещена, помечаем ее как посещенную и добавляем ее в очередь
         for (int x : adj[curr]) {
             if (!visited[x]) {
                 visited[x] = true;
@@ -40,23 +37,24 @@ void bfs(vector<vector<int>>& adj, int s)
     }
 }
 
-// Function to add an edge to the graph
+// Функция для добавления ребра в граф
 void addEdge(vector<vector<int>>& adj,
              int u, int v)
 {
+    // Добавляем ребро между вершинами u и v
     adj[u].push_back(v);
-    adj[v].push_back(u); // Undirected Graph
+    adj[v].push_back(u); // Неориентированный граф
 }
 
 int main()
 {
-    // Number of vertices in the graph
+    // Количество вершин в графе
     int V = 10;
 
-    // Adjacency list representation of the graph
+    // Представление графа в виде списка смежности
     vector<vector<int>> adj(V);
 
-    // Add edges to the graph
+    // Добавляем ребра в граф
     addEdge(adj, 0, 1);
     addEdge(adj, 0, 3);
     addEdge(adj, 1, 2);
@@ -73,7 +71,8 @@ int main()
     addEdge(adj, 7, 8);
     addEdge(adj, 7, 9);
     addEdge(adj, 8, 9);
-    // Perform BFS traversal starting from vertex 0
+
+    // Выполняем обход графа в ширину, начиная с вершины 0
     cout << "BFS starting from 0 : \n";
     bfs(adj, 0);
 
