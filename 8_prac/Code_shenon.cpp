@@ -1,120 +1,289 @@
 #include <iostream>
 #include <string>
-#include <map>
 #include <vector>
-#include <queue>
-#include <functional>
+#include <algorithm>
+#include <map>
 
 using namespace std;
 
-// Structure to represent a node in the Huffman tree
-struct Node {
-    char symbol;
-    int frequency;
-    Node* left;
-    Node* right;
+// Структура для хранения символа и его частоты
+struct let {
+    char lt; // символ
+    int cnt; // частота символа
+    let(char lt, int cnt) {
+        // инициализируем символ и его частоту
+        this->lt = lt;
+        this->cnt = cnt;
+    }
 };
 
-// Function to calculate the frequency of each symbol in the input string
-map<char, int> calculateFrequencies(string input) {
-    map<char, int> frequencies;
-    for (char c : input) {
-        frequencies[c]++;
-    }
-    return frequencies;
+// Функция сравнения для сортировки символов по частоте
+bool compare_lets(const let *pr1, const let *pr2) {
+    // сравниваем частоты символов
+    return pr1->cnt > pr2->cnt;
 }
 
-// Function to build the Huffman tree
-Node* buildHuffmanTree(map<char, int> frequencies) {
-    // Create a priority queue to store nodes
-    priority_queue<Node*, vector<Node*>, std::function<bool(Node*, Node*)>> queue(
-            [](Node* a, Node* b) { return a->frequency > b->frequency; });
-
-    // Create leaf nodes for each symbol
-    for (auto& pair : frequencies) {
-        Node* node = new Node();
-        node->symbol = pair.first;
-        node->frequency = pair.second;
-        node->left = node->right = nullptr;
-        queue.push(node);
-    }
-
-    // Build the Huffman tree
-    while (queue.size() > 1) {
-        Node* left = queue.top();
-        queue.pop();
-        Node* right = queue.top();
-        queue.pop();
-
-        Node* parent = new Node();
-        parent->frequency = left->frequency + right->frequency;
-        parent->left = left;
-        parent->right = right;
-        queue.push(parent);
-    }
-
-    return queue.top();
-}
-
-// Function to generate Shannon-Fano codes
-void generateCodes(Node* root, string code, map<char, string>& codes) {
-    if (root == nullptr) {
+// Рекурсивная функция для кодирования методом Шеннона-Фано
+void rec(int st, int fn, int sm[], map<char, string> &codes, vector<let *> counts) {
+    // если стартовый индекс больше или равен конечному, то выходим из функции
+    if (st >= fn) {
         return;
     }
-
-    if (root->left == nullptr && root->right == nullptr) {
-        codes[root->symbol] = code;
+    char r = '0';
+    int ed = fn;
+    for (int i = st; i <= fn; ++i) {
+        // добавляем символ к коду
+        codes[counts[i]->lt] += r;
+        if (i == fn || fn - st == 1 || (sm[i + 1] - sm[st]) > (sm[fn + 1] - sm[i + 1])){
+            // меняем код на '1' и обновляем конечный индекс
+            r = '1';
+            ed = i;
+            break;
+        }
     }
-
-    generateCodes(root->left, code + "0", codes);
-    generateCodes(root->right, code + "1", codes);
+    for (int i = ed + 1; i <= fn; ++i) {
+        // добавляем символ к коду
+        codes[counts[i]->lt] += r;
+    }
+    // рекурсивно вызываем функцию для левого и правого подмассивов
+    rec(st, ed, sm, codes, counts);
+    rec(ed + 1, fn, sm, codes, counts);
 }
 
-// Function to encode the input string using Shannon-Fano codes
-string encodeString(string input, map<char, string> codes) {
-    string encodedString;
-    for (char c : input) {
-        encodedString += codes[c];
+// Функция для создания карты кодов методом Шеннона-Фано
+map<char, string> make_map(string text){
+    map<char, string> codes;
+    vector<let *> counts;
+
+    string set_text = "";
+    for (int i = 0; i < text.length(); ++i){
+        // если символ не встречался ранее, то добавляем его в set_text
+        if (count(set_text.begin(), set_text.end(), text[i]) == 0){
+            set_text += text[i];
+            codes[text[i]] = "";
+        }
     }
-    return encodedString;
+
+    for (int i = 0; i < set_text.length(); ++i){
+        // создаем структуру let для каждого символа
+        counts.push_back(new let(set_text[i], count(text.begin(), text.end(), set_text[i])));
+    }
+
+    // сортируем структуры let по частоте символов
+    sort(counts.begin(), counts.end(), compare_lets);
+
+    int sm[counts.size() + 1];
+    sm[0] = 0;
+    for (int i = 0; i < counts.size(); ++i){
+        // вычисляем сумму частот символов
+        sm[i + 1] = sm[i] + counts[i]->cnt;
+    }
+
+    int st = 0;
+    int fn = counts.size() - 1;
+    char r = '0';
+    int ed = 0;
+
+    // вызываем рекурсивную функцию для кодирования
+    rec(st, fn, sm, codes, counts);
+
+    return codes;
 }
 
-// Function to decode the encoded string using Shannon-Fano codes
-string decodeString(string encodedString, map<char, string> codes) {
-    string decodedString;
-    string tempCode;
+// Функция для кодирования строки методом Шеннона-Фано
+string code(string text, map<char, string> codes){
+    string s = "";
+    for (int i = 0; i < text.length(); ++i){
+        // добавляем код символа к строке
+        s += codes[text[i]];
+    }
+    return s;
+}
 
-    for (char c : encodedString) {
-        tempCode += c;
-        for (auto& pair : codes) {
-            if (pair.second == tempCode) {
-                decodedString += pair.first;
-                tempCode.clear();
+// Функция для декодирования строки методом Шеннона-Фано
+string decode(string text, map<char, string> codes){
+    string s = "";
+    string buffer = "";
+    for (int i = 0; i < text.length(); ++i){
+        buffer += text[i];
+        for (auto &[lt, code] : codes){
+            // если код символа совпадает с буфером, то добавляем символ к строке
+            if (code == buffer){
+                s += lt;
+                buffer = "";
                 break;
             }
         }
     }
-
-    return decodedString;
+    return s;
 }
 
-int main() {
-    string input = "Мой котёнок очень странный, Он не хочет есть сметану, К молоку не прикасался И от рыбки отказался.";
-    map<char, int> frequencies = calculateFrequencies(input);
-    Node* root = buildHuffmanTree(frequencies);
-    map<char, string> codes;
-    generateCodes(root, "", codes);
+// Структура для хранения узла дерева Хаффмана
+struct haf
+{
+    char lt; // символ
+    char code; // код символа
+    int cnt; // частота символа
+    haf *left; // левый ребенок
+    haf *right; // правый ребенок
+    haf(char lt, int cnt, haf *left, haf *right, char code){
+        // инициализируем символ, код, частоту и детей
+        this->lt = lt;
+        if (left && right){
+            this->cnt = left->cnt + right->cnt;
+        }else{
+            this->cnt = cnt;
+        }
+        this->left = left;
+        this->right = right;
+        this->code = code;
+    }
+    // Функция для поиска символа в дереве Хаффмана
+    char find(string code, int ind = 0){
+        // если мы достигли листа дерева, то возвращаем символ
+        if (!this->left && !this->right){
+            if (code.length() == ind){
+                return this->lt;
+            }else{
+                return '@';
+            }
+        }
 
-    cout << "Frequency of each symbol and its code:" << endl;
-    for (auto& pair : frequencies) {
-        cout << "Symbol: " << pair.first << ", Frequency: " << pair.second << ", Code: " << codes[pair.first] << endl;
+        // если индекс больше длины кода, то возвращаем '@'
+        if (ind >= code.length()){
+            return '@';
+        }
+
+        // если код символа равен '0', то идем в левое поддерево
+        if (code[ind] == '0'){
+            return this->left->find(code, ind + 1);
+        }
+        // если код символа равен '1', то идем в правое поддерево
+        return this->right->find(code, ind + 1);
     }
 
-    string encodedString = encodeString(input, codes);
-    cout << "Encoded string: " << encodedString << endl;
+    // Функция для получения кода символа в дереве Хаффмана
+    string get_code(char lt) {
+        // если мы достигли листа дерева, то возвращаем код символа
+        if (!this->left && !this->right) {
+            if (this->lt == lt) {
+                return string(1, this->code);
+            }
+            else {
+                return "";
+            }
+        }
 
-    string decodedString = decodeString(encodedString, codes);
-    cout << "Decoded string: " << decodedString << endl;
+        // рекурсивно вызываем функцию для левого и правого поддеревьев
+        string s = this->left->get_code(lt) + this->right->get_code(lt);
+        if (s != "" && this->code != '@') {
+            return this->code + s;
+        }
+        return s;
+    }
+};
 
+// Функция сравнения для сортировки узлов дерева Хаффмана
+bool compare_hafs(const haf *pr1, const haf *pr2){
+    // сравниваем частоты символов
+    return pr1->cnt < pr2->cnt;
+}
+
+// Функция для создания дерева Хаффмана
+haf *make_haf(string text){
+    vector<haf *> cnts;
+
+    string set_text = "";
+    for (int i = 0; i < text.length(); ++i){
+        // если символ не встречался ранее, то добавляем его в set_text
+        if (count(set_text.begin(), set_text.end(), text[i]) == 0){
+            set_text += text[i];
+        }
+    }
+
+    for (int i = 0; i < set_text.length(); ++i){
+        // создаем структуру haf для каждого символа
+        cnts.push_back(new haf(set_text[i], count(text.begin(), text.end(), set_text[i]), nullptr, nullptr, '@'));
+    }
+    haf *ptr;
+    while (cnts.size() > 1){
+        // сортируем структуры haf по частоте символов
+        sort(cnts.begin(), cnts.end(), compare_hafs);
+        cnts[0]->code = '0';
+        cnts[1]->code = '1';
+        ptr = new haf('@', 0, cnts[0], cnts[1], '@');
+        cnts.push_back(ptr);
+        cnts.erase(cnts.begin());
+        cnts.erase(cnts.begin());
+    }
+    ptr = cnts[0];
+    return ptr;
+}
+
+// Функция для кодирования строки методом Хаффмана
+string code_h(string text, haf* codes){
+    string s = "";
+    for (int i = 0; i < text.length(); ++i){
+        // добавляем код символа к строке
+        s += codes->get_code(text[i]);
+    }
+    return s;
+}
+
+string decode_h(string text, haf* codes) {
+    string s = "";
+    string buffer = "";
+    char lt = '@';
+        for (int i = 0; i < text.length(); ++i) {
+            buffer += text[i];
+            lt = codes->find(buffer);
+            if (lt != '@') {
+                s += lt;
+                buffer = "";
+        }
+    }
+    return s;
+}
+
+int main(){
+    string s = "Мой котёнок очень\n"
+               "странный, Он не\n"
+               "хочет есть сметану, К\n"
+               "молоку не прикасался\n"
+               "И от рыбки отказался.";
+    map<char, string> codes = make_map(s);
+    string coded_s = code(s, codes);
+    string decoded_s = decode(coded_s, codes);
+    cout << "Кодирование методом Шеннона-Фано:" << endl;
+    cout << "Исходная строка:" << endl
+         << "Размер в битах: " << s.length() * 8 << endl
+         << s << endl
+         << endl
+         << "Закодированная строка:" << endl
+         << "Размер в битах: " << coded_s.length() << endl
+         << coded_s << endl
+         << endl
+         << "Раскодированная строка:" << endl
+         << decoded_s << endl
+         << endl
+         << endl;
+
+    s = "И главное, Артем, главное... Не ешь желтый снег! Ха-ха-ха...";
+    haf *codes_h = make_haf(s);
+    coded_s = code_h(s, codes_h);
+    decoded_s = decode_h(coded_s, codes_h);
+    cout << "Кодирование методом Хаффмана:" << endl;
+    cout << "Исходная строка:" << endl
+         << "Размер в битах: " << s.length() * 8 << endl
+         << s << endl
+         << endl
+         << "Закодированная строка:" << endl
+         << "Размер в битах: " << coded_s.length() << endl
+         << coded_s << endl
+         << endl
+         << "Раскодированная строка:" << endl
+         << decoded_s << endl
+         << endl
+         << endl;
     return 0;
 }
