@@ -45,6 +45,36 @@ void LZ78encode(const string& phrase) {
     }
 }
 
+string LZ78decode(const string& phrase) {
+    unordered_map<int, string> dictionary; // словарь для хранения строк
+    dictionary[0] = ""; // добавление пустой строки в словарь
+    int dictSize = 1; // размер словаря
+
+    string result = ""; // раскодированная строка
+    size_t pos = 0; // позиция в строке с кодами
+
+    while (pos < phrase.size()) {
+        // Извлечение номера текущей строки и текущего символа из кода
+        size_t commaPos = phrase.find(',', pos);
+        int prefix = stoi(phrase.substr(pos, commaPos - pos));
+        char symbol = phrase[commaPos + 1];
+
+        // Извлечение строки из словаря по номеру
+        string w = dictionary[prefix];
+
+        // Добавление строки и текущего символа к раскодированной строке
+        result += w + symbol;
+
+        // Добавление новой строки в словарь
+        dictionary[dictSize++] = w + symbol;
+
+        // Обновление позиции в строке с кодами
+        pos = commaPos + 3; // +3, потому что "<" и ">" не учитываются
+    }
+
+    return result;
+}
+
 int main() {
     string phrase; // строка для кодирования
     phrase = "sarsalsarsanlasanl33";
